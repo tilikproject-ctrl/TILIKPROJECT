@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TILIK — Verifikasi Awal Berita</title>
+<style>
+:root{
+  --green:#17633f;--green2:#0f4d31;--bg:#f4f7f5;--card:#fff;
+  --text:#23332a;--muted:#6b776f;--line:#dce5df;
+  --yellow:#b88700;--red:#bd3f3f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
+header{background:linear-gradient(135deg,#17633f,#0d4b30);color:white;padding:18px 7%;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:24px;font-weight:800}.tag{font-size:13px;opacity:.9}
+.hero{text-align:center;padding:48px 20px 30px}.hero h1{font-size:42px;margin:0 0 10px;color:var(--green)}
+.hero p{max-width:760px;margin:auto;color:var(--muted)}
+.wrap{width:min(1080px,92%);margin:auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:0 8px 30px #163b2710}
+label{display:block;font-weight:750;margin:15px 0 7px}
+input,textarea{width:100%;border:1px solid #cdd8d1;border-radius:10px;padding:13px;font-size:15px;outline:0;background:white}
+input:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px #17633f15}
+textarea{min-height:210px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.divider{text-align:center;color:#89958e;margin:22px 0}
+button{border:0;border-radius:10px;padding:14px 18px;background:var(--green);color:white;font-weight:800;cursor:pointer;font-size:15px}
+button:hover{background:var(--green2)}
+.actions{display:flex;gap:10px;margin-top:20px}.actions button:first-child{flex:1}.secondary{background:#68756d}
+#loading{display:none;text-align:center;color:var(--green);font-weight:700;margin:22px}
+#hasil{display:none;margin-top:25px}
+.status{padding:26px;border-radius:18px;text-align:center;border:2px solid}
+.green{background:#eaf7ee;border-color:#65ae78}.yellow{background:#fff8df;border-color:#d5b54b}.red{background:#fdecec;border-color:#d56b6b}
+.status h2{margin:0 0 4px}.score{font-size:54px;font-weight:900}.sub{color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:16px}
+.panel{background:white;border:1px solid var(--line);border-radius:15px;padding:20px}
+.panel h3{margin:0 0 12px;color:var(--green)}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px}.meta div{background:#f7f9f8;border-radius:10px;padding:12px}.meta strong{display:block;color:var(--green);font-size:12px;margin-bottom:4px}
+.bar{height:9px;background:#e7ece9;border-radius:10px;overflow:hidden;margin:9px 0 12px}.fill{height:100%;background:var(--green)}
+.badge{display:inline-block;background:#e8f2ec;color:var(--green);padding:7px 12px;border-radius:20px;font-weight:800}
+.flag,.positive,.tip{padding:12px 14px;margin-top:8px;border-left:4px solid;border-radius:7px;font-size:14px}
+.flag{background:#fff2f2;border-color:var(--red)}.positive{background:#eef8f1;border-color:#54a66a}.tip{background:#f0f5ff;border-color:#5275b8}
+.article{background:#fafcfb;border:1px solid var(--line);padding:16px;border-radius:10px;max-height:340px;overflow:auto;white-space:pre-wrap;font-size:14px}
+.notice{background:#fff8df;border-left:4px solid #d5b54b;padding:14px;margin-top:18px;font-size:13px}
+footer{margin-top:55px;background:var(--green);color:white;text-align:center;padding:28px}
+@media(max-width:700px){.grid,.row,.meta{grid-template-columns:1fr}.hero h1{font-size:31px}.actions{flex-direction:column}}
+</style>
+</head>
+<body>
+<header><div class="logo">🔎 TILIK</div><div class="tag">Literasi digital • verifikasi awal</div></header>
+
+<section class="hero">
+  <h1>Apakah Berita Ini Kredibel?</h1>
+  <p>Analisis awal berdasarkan sumber, penulis, waktu, tujuan, bahasa, bukti, referensi, dan indikator clickbait. Sistem tidak mengklaim kebenaran secara mutlak.</p>
+</section>
+
+<main class="wrap">
+<div class="card">
+  <label>🔗 Link berita</label>
+  <input id="url" type="url" placeholder="https://contoh.com/berita">
+
+  <div class="divider">— atau gunakan mode copy-paste —</div>
+
+  <div class="row">
+    <div>
+      <label>🌐 Sumber</label>
+      <input id="manualSource" placeholder="Contoh: Kompas.com">
+    </div>
+    <div>
+      <label>👤 Penulis</label>
+      <input id="manualAuthor" placeholder="Nama penulis">
+    </div>
+  </div>
+
+  <label>📅 Tanggal diterbitkan</label>
+  <input id="manualDate" placeholder="Contoh: 9 Agustus 2026">
+
+  <label>📰 Isi berita</label>
+  <textarea id="manualText" placeholder="Tempel isi berita di sini jika URL tidak dapat dibaca..."></textarea>
+
+  <div class="actions">
+    <button onclick="mulaiAnalisis()">🔍 ANALISIS BERITA</button>
+    <button class="secondary" onclick="resetForm()">↺ RESET</button>
+  </div>
+
+  <div id="loading">⏳ Membaca metadata dan menganalisis artikel...</div>
+</div>
+
+<div id="hasil"></div>
+
+<div class="notice">
+  <b>Catatan penting:</b> skor adalah alat bantu verifikasi awal, bukan bukti bahwa suatu berita pasti benar atau hoaks. Untuk klaim penting, tetap bandingkan dengan sumber resmi dan sumber independen.
+</div>
+</main>
+
+<footer><b>TILIK © 2026</b><br>Teliti Informasi Lihat Kebenaran</footer>
+
+<script>
+const knownMedia=[
+"kompas.com","detik.com","tempo.co","antaranews.com","cnnindonesia.com",
+"liputan6.com","tirto.id","cnbcindonesia.com","republika.co.id",
+"thejakartapost.com","bbc.com","bbc.co.uk","reuters.com","apnews.com"
+];
+
+const sensational=["heboh","gempar","viral","mengerikan","terbongkar","rahasia",
+"menggemparkan","bikin geger","wajib tahu","wajib share","sebarkan","jangan sampai",
+"ternyata","dijamin","100% benar","pasti benar","gila","fantastis","mengejutkan"];
+
+const opinion=["menurut saya","saya berpendapat","saya menilai","menurut pandangan",
+"opini","pendapat","pandangan","editorial","kolom","seharusnya","semestinya"];
+
+const promotion=["promo","diskon","beli sekarang","penawaran","harga spesial",
+"gratis ongkir","produk","official store","checkout","voucher","cashback"];
+
+const evidence=["data","penelitian","studi","laporan","survei","dokumen","statistik",
+"kementerian","lembaga","jurnal","riset","badan","hasil penelitian"];
+
+const claims=["menyatakan","mengatakan","mengungkapkan","mengklaim","berdasarkan data",
+"berdasarkan penelitian","hasil penelitian","menurut data","ditemukan bahwa","terbukti","dipastikan"];
+
+function countWords(text,list){
+  return list.reduce((n,w)=>n+(text.includes(w)?1:0),0);
+}
+
+function escapeHTML(text){
+  return String(text??"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+function parseJSONLD(doc){
+  let out={author:"",datePublished:"",dateModified:"",headline:""};
+  doc.querySelectorAll('script[type="application/ld+json"]').forEach(s=>{
+    try{
+      let d=JSON.parse(s.textContent);
+      if(Array.isArray(d)) d=d.find(x=>["NewsArticle","Article"].includes(x?.["@type"]));
+      if(d?.["@graph"]) d=d["@graph"].find(x=>["NewsArticle","Article"].includes(x?.["@type"]));
+      if(!d)return;
+      if(d.headline)out.headline=d.headline;
+      if(d.author){
+        if(typeof d.author==="string")out.author=d.author;
+        else if(d.author.name)out.author=d.author.name;
+        else if(Array.isArray(d.author))out.author=d.author.map(x=>x.name||x).join(", ");
+      }
+      if(d.datePublished)out.datePublished=d.datePublished;
+      if(d.dateModified)out.dateModified=d.dateModified;
+    }catch(e){}
+  });
+  return out;
+}
+
+async function fetchArticle(url){
+  if(!/^https?:\/\//i.test(url))throw new Error("URL tidak valid.");
+  const proxy="https://api.allorigins.win/raw?url="+encodeURIComponent(url);
+  const response=await fetch(proxy);
+  if(!response.ok)throw new Error("Halaman tidak dapat dibaca.");
+  const html=await response.text();
+  const doc=new DOMParser().parseFromString(html,"text/html");
+  const j=parseJSONLD(doc);
+  const u=new URL(url);
+  const domain=u.hostname.replace(/^www\./,"");
+
+  let title=j.headline||doc.querySelector('meta[property="og:title"]')?.content||
+    doc.querySelector("h1")?.innerText?.trim()||doc.title||"Judul tidak ditemukan";
+
+  let author=j.author||doc.querySelector('meta[name="author"]')?.content||
+    doc.querySelector('[rel="author"],.author,.byline,.writer')?.innerText?.trim()||"";
+
+  let date=j.datePublished;
+  if(!date){
+    for(const sel of ['meta[property="article:published_time"]','meta[itemprop="datePublished"]',
+      'meta[name="date"]','meta[name="publishdate"]']){
+      const el=doc.querySelector(sel);
+      if(el){date=el.content||el.getAttribute("datetime")||"";if(date)break;}
+    }
+  }
+  if(!date){
+    const t=doc.querySelector("time[datetime],time");
+    date=t?.getAttribute("datetime")||t?.innerText?.trim()||"";
+  }
+
+  let updated=j.dateModified||doc.querySelector('meta[property="article:modified_time"]')?.content||"";
+  if(!updated){
+    const t=doc.querySelector('time[itemprop="dateModified"]');
+    updated=t?.getAttribute("datetime")||t?.innerText?.trim()||"";
+  }
+
+  const paras=[...doc.querySelectorAll("p")].map(p=>p.innerText.trim()).filter(x=>x.length>=40);
+  const text=paras.join("\n\n");
+  if(text.length<100)throw new Error("Isi artikel tidak ditemukan.");
+
+  return {url,domain,judul:title,isi:text,penulis:author,tanggal:date,updated,jumlahLink:doc.querySelectorAll("a").length};
+}
+
+function analyze(d){
+  const text=(d.judul+" "+d.isi).toLowerCase();
+  let source=0,sourceNotes=[];
+  const known=knownMedia.includes(d.domain.toLowerCase());
+  if(known){source+=60;sourceNotes.push("Domain termasuk media yang dikenali sistem.");}
+  else source+=30,sourceNotes.push("Domain belum termasuk daftar media yang dikenali.");
+  if(d.url?.startsWith("https://"))source+=20,sourceNotes.push("Website menggunakan HTTPS.");
+  if(d.penulis&&d.penulis!=="Penulis tidak dicantumkan")source+=20,sourceNotes.push("Identitas penulis tersedia.");
+  source=Math.min(source,100);
+
+  let time=0,timeNotes=[];
+  if(d.tanggal&&d.tanggal!=="Tanggal tidak dicantumkan")time+=70,timeNotes.push("Tanggal publikasi tersedia.");
+  else timeNotes.push("Tanggal publikasi tidak ditemukan.");
+  if(d.updated)time+=30,timeNotes.push("Informasi pembaruan tersedia.");
+
+  const op=countWords(text,opinion), pro=countWords(text,promotion);
+  const tujuan=pro>=3&&pro>op?"Promosi":op>=3&&op>pro?"Opini":"Informasi";
+
+  const sens=countWords(text,sensational);
+  const language=sens===0?95:sens<=2?75:sens<=4?55:30;
+
+  const ev=countWords(text,evidence), cl=countWords(text,claims);
+  const evidenceScore=ev>=5?90:ev>=3?75:ev>=1?55:30;
+  const ref=d.jumlahLink>=10?90:d.jumlahLink>=5?75:d.jumlahLink>=2?60:35;
+
+  let completeness=0;
+  if(d.judul?.length>15)completeness+=25;
+  if(d.isi.length>=500)completeness+=25;
+  if(d.penulis&&d.penulis!=="Penulis tidak dicantumkan")completeness+=25;
+  if(d.tanggal&&d.tanggal!=="Tanggal tidak dicantumkan")completeness+=25;
+
+  const title=d.judul.toLowerCase();
+  const click=countWords(title,sensational);
+  const clickScore=click===0?95:click<=2?65:35;
+
+  const score=Math.round(source*.20+time*.10+language*.15+evidenceScore*.20+ref*.10+completeness*.10+clickScore*.15);
+  const status=score>=80?"🟢 KREDIBILITAS BAIK":score>=60?"🟡 PERLU VERIFIKASI":"🔴 RISIKO INFORMASI TINGGI";
+  const cls=score>=80?"green":score>=60?"yellow":"red";
+
+  return {source,sourceNotes,time,timeNotes,tujuan,language,evidenceScore,ev,cl,ref,completeness,clickScore,click,score,status,cls};
+}
+
+function bar(score){
+  return `<div class="bar"><div class="fill" style="width:${score}%"></div></div>`;
+}
+
+function render(d,a){
+  const flags=[];
+  if(a.source<60)flags.push("Sumber belum dapat diverifikasi sebagai media yang dikenali sistem.");
+  if(a.time<70)flags.push("Informasi waktu publikasi belum lengkap.");
+  if(a.language<60)flags.push("Ditemukan cukup banyak bahasa sensasional.");
+  if(a.evidenceScore<55)flags.push("Indikator data atau bukti masih terbatas.");
+  if(a.clickScore<60)flags.push("Judul memiliki beberapa karakteristik clickbait.");
+  if(!d.penulis||d.penulis==="Penulis tidak dicantumkan")flags.push("Identitas penulis tidak tersedia.");
+
+  const positives=[];
+  if(a.source>=80)positives.push("Sumber memiliki indikator kredibilitas yang cukup baik.");
+  if(d.penulis&&d.penulis!=="Penulis tidak dicantumkan")positives.push("Identitas penulis tersedia.");
+  if(d.tanggal&&d.tanggal!=="Tanggal tidak dicantumkan")positives.push("Tanggal publikasi tersedia.");
+  if(a.evidenceScore>=75)positives.push("Artikel memiliki cukup banyak indikator data atau bukti.");
+  if(a.clickScore>=80)positives.push("Judul tidak menunjukkan banyak indikator clickbait.");
+
+  const flagHTML=flags.length?flags.map(x=>`<div class="flag">⚠️ ${escapeHTML(x)}</div>`).join("")
+    :`<div class="positive">✓ Tidak ditemukan red flag utama dari indikator yang diperiksa.</div>`;
+  const posHTML=positives.length?positives.map(x=>`<div class="positive">✓ ${escapeHTML(x)}</div>`).join("")
+    :"<p>Belum ditemukan indikator positif yang cukup.</p>";
+
+  const hasil=document.getElementById("hasil");
+  hasil.innerHTML=`
+    <div class="status ${a.cls}">
+      <h2>${a.status}</h2><div class="score">${a.score}</div><div class="sub">skor analisis dari 100</div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h3>📰 Informasi Artikel</h3>
+      <div class="meta">
+        <div><strong>Judul</strong>${escapeHTML(d.judul)}</div>
+        <div><strong>Sumber</strong>${escapeHTML(d.domain)}</div>
+        <div><strong>Penulis</strong>${escapeHTML(d.penulis||"Tidak ditemukan")}</div>
+        <div><strong>Diterbitkan</strong>${escapeHTML(d.tanggal||"Tidak ditemukan")}</div>
+        <div><strong>Diperbarui</strong>${escapeHTML(d.updated||"Tidak ditemukan")}</div>
+        <div><strong>Panjang teks</strong>${d.isi.length} karakter</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel"><h3>🌐 Verifikasi Sumber</h3><b>${a.source}/100</b>${bar(a.source)}${a.sourceNotes.map(x=>`<p>• ${escapeHTML(x)}</p>`).join("")}</div>
+      <div class="panel"><h3>🕐 Verifikasi Waktu</h3><b>${a.time}/100</b>${bar(a.time)}${a.timeNotes.map(x=>`<p>• ${escapeHTML(x)}</p>`).join("")}</div>
+      <div class="panel"><h3>🎯 Tujuan Utama</h3><span class="badge">${a.tujuan}</span><p>${a.tujuan==="Informasi"?"Artikel cenderung menyampaikan informasi.":a.tujuan==="Opini"?"Artikel memiliki karakteristik penyampaian pendapat.":"Artikel memiliki karakteristik promosi atau pemasaran."}</p></div>
+      <div class="panel"><h3>🧠 Analisis Bahasa</h3><b>${a.language}/100</b>${bar(a.language)}<p>Ditemukan ${sensCount(d)} indikator bahasa sensasional.</p></div>
+      <div class="panel"><h3>📊 Bukti & Data</h3><b>${a.evidenceScore}/100</b>${bar(a.evidenceScore)}<p>Indikator data/bukti: <b>${a.ev}</b></p><p>Indikator klaim: <b>${a.cl}</b></p></div>
+      <div class="panel"><h3>🔗 Referensi</h3><b>${a.ref}/100</b>${bar(a.ref)}<p>Terdapat sekitar <b>${d.jumlahLink}</b> tautan pada halaman.</p></div>
+      <div class="panel"><h3>📋 Kelengkapan</h3><b>${a.completeness}/100</b>${bar(a.completeness)}<p>Dinilai dari judul, isi, penulis, dan tanggal.</p></div>
+      <div class="panel"><h3>🪤 Clickbait</h3><b>${a.clickScore}/100</b>${bar(a.clickScore)}<p>${a.click===0?"Tidak ditemukan indikator clickbait utama.":`Ditemukan ${a.click} indikator clickbait pada judul.`}</p></div>
+    </div>
+
+    <div class="panel" style="margin-top:16px"><h3>🚩 Hal yang Perlu Diwaspadai</h3>${flagHTML}</div>
+    <div class="panel" style="margin-top:16px"><h3>✅ Indikator Positif</h3>${posHTML}</div>
+
+    <div class="panel" style="margin-top:16px">
+      <h3>💡 Rekomendasi Verifikasi</h3>
+      <div class="tip">1. Cari pernyataan atau dokumen dari sumber resmi.</div>
+      <div class="tip">2. Bandingkan klaim utama dengan minimal dua sumber independen.</div>
+      <div class="tip">3. Periksa tanggal dan konteks agar informasi lama tidak dianggap baru.</div>
+      <div class="tip">4. Jangan membagikan berita sebelum klaim penting terverifikasi.</div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h3>📖 Isi yang Dibaca Sistem</h3>
+      <div class="article">${escapeHTML(d.isi)}</div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h3>📌 Kesimpulan</h3>
+      <p>Berdasarkan indikator yang diperiksa, artikel memperoleh skor <b>${a.score}/100</b> dan dikategorikan <b>${a.status}</b>.</p>
+      <p>Hasil ini adalah penilaian awal, bukan bukti mutlak bahwa berita benar atau hoaks. Verifikasi manusia dan sumber primer tetap diperlukan.</p>
+    </div>
+  `;
+  hasil.style.display="block";
+  hasil.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function sensCount(d){return countWords((d.judul+" "+d.isi).toLowerCase(),sensational)}
+
+async function mulaiAnalisis(){
+  const url=document.getElementById("url").value.trim();
+  const source=document.getElementById("manualSource").value.trim();
+  const author=document.getElementById("manualAuthor").value.trim();
+  const date=document.getElementById("manualDate").value.trim();
+  const text=document.getElementById("manualText").value.trim();
+  const hasil=document.getElementById("hasil"), loading=document.getElementById("loading");
+
+  if(!url&&!text){alert("Masukkan link atau isi berita terlebih dahulu.");return;}
+  loading.style.display="block";hasil.style.display="none";
+
+  try{
+    let data;
+    if(url){
+      data=await fetchArticle(url);
+      if(!data.penulis&&author)data.penulis=author;
+      if(!data.tanggal&&date)data.tanggal=date;
+      if((!data.domain||data.domain==="")&&source)data.domain=source;
+      if(data.isi.length<100&&text)data.isi=text;
+    }else{
+      data={
+        url:"",
+        domain:source||"Sumber tidak dicantumkan",
+        judul:extractTitle(text),
+        isi:text,
+        penulis:author||"Penulis tidak dicantumkan",
+        tanggal:date||"Tanggal tidak dicantumkan",
+        updated:"",
+        jumlahLink:0
+      };
+    }
+    render(data,analyze(data));
+  }catch(e){
+    hasil.style.display="block";
+    hasil.innerHTML=`<div class="panel"><h3>⚠️ URL tidak dapat dibaca otomatis</h3><p>Website mungkin memblokir akses otomatis atau membutuhkan JavaScript khusus.</p><div class="notice">Gunakan mode copy-paste: isi sumber, penulis, tanggal, lalu tempel isi berita. Sistem tetap dapat melakukan analisis teks.</div></div>`;
+  }finally{loading.style.display="none";}
+}
+
+function extractTitle(text){
+  const lines=text.split("\n").map(x=>x.trim()).filter(Boolean);
+  return lines[0]||"Judul tidak ditemukan";
+}
+
+function resetForm(){
+  ["url","manualSource","manualAuthor","manualDate","manualText"].forEach(id=>document.getElementById(id).value="");
+  const h=document.getElementById("hasil");h.innerHTML="";h.style.display="none";
+}
+</script>
+</body>
+</html>
